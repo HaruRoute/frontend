@@ -33,8 +33,8 @@ const handleNav = (path: string) => {
 
     <div class="navbar-mode-group d-none d-lg-flex" :class="{ segmented: true }">
       <button class="navbar-mode-btn" :class="{ active: route.path === '/' }" @click="handleNav('/')">동선 짜기</button>
-      <button v-if="isLoggedIn" class="navbar-mode-btn" :class="{ active: route.path.startsWith('/library') }" @click="handleNav('/library')">내 보관함</button>
-      <button class="navbar-mode-btn" :class="{ active: route.path.startsWith('/board') || route.path.startsWith('/notices') }" @click="handleNav('/board')">게시판</button>
+      <button v-if="isLoggedIn" id="tour-plans-btn" class="navbar-mode-btn" :class="{ active: route.path.startsWith('/library') }" @click="handleNav('/library')">내 보관함</button>
+      <button id="tour-board-btn" class="navbar-mode-btn" :class="{ active: route.path.startsWith('/board') || route.path.startsWith('/notices') }" @click="handleNav('/board')">게시판</button>
     </div>
 
     <div class="d-none d-md-flex nav-actions">
@@ -44,7 +44,7 @@ const handleNav = (path: string) => {
         <button class="btn-filled" data-bs-toggle="modal" data-bs-target="#joinModal">회원가입</button>
       </template>
       <template v-else>
-        <span class="user-greeting">{{ userName }}님</span>
+        <button class="user-greeting" data-bs-toggle="modal" data-bs-target="#profileModal">{{ userName }}님 ✎</button>
         <button class="btn-outline" @click="$emit('logout')">로그아웃</button>
       </template>
     </div>
@@ -63,7 +63,7 @@ const handleNav = (path: string) => {
         <button class="mobile-nav-link btn-action" data-bs-toggle="modal" data-bs-target="#joinModal" @click="closeMobileMenu">회원가입</button>
       </template>
       <template v-else>
-        <div class="mobile-user-greeting">{{ userName }}님</div>
+        <button class="mobile-nav-link" data-bs-toggle="modal" data-bs-target="#profileModal" @click="closeMobileMenu">{{ userName }}님 ✎ 프로필 수정</button>
         <button class="mobile-nav-link btn-action text-danger" @click="$emit('logout'); closeMobileMenu()">로그아웃</button>
       </template>
     </div>

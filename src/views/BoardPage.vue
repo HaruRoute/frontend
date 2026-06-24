@@ -41,8 +41,6 @@ const bestPosts = ref<Post[]>([])
 const isOverviewLoading = ref(false)
 
 const FILTERS = ['전체', '공지', '자유', '질문']
-// Korean → English enum map
-const CAT_MAP: Record<string, string> = { '자유': 'FREE', '질문': 'QUESTION' }
 // English → Korean label
 const CAT_LABEL: Record<string, string> = { FREE: '자유', QUESTION: '질문' }
 

@@ -6,8 +6,8 @@ const steps = [
   { id: 'tour-map-search', title: '🔍 관광지 검색', desc: '시도·시군구·관광타입을 선택하고 조회하면 지도에 마커가 표시됩니다.' },
   { id: 'tour-location-search', title: '📍 이 위치에서 검색', desc: '지도를 원하는 곳으로 이동한 뒤 이 버튼을 누르면 현재 화면 안의 관광지를 검색해줘요.' },
   { id: 'tour-planner-btn', title: '🗺️ 경로 플래너', desc: '마음에 드는 장소를 추가해 여행 동선을 짜고 최적 루트로 정렬할 수 있어요.' },
-  { id: 'tour-plans-btn', title: '📅 저장 계획', desc: '경로 플래너에서 완성한 여행 계획을 저장하면 여기서 다시 불러볼 수 있어요.' },
-  { id: 'tour-favorites-btn', title: '⭐ 즐겨찾기', desc: '자주 방문하거나 저장해두고 싶은 장소를 즐겨찾기에 추가하세요.' },
+  { id: 'tour-plans-btn', title: '📅 내 보관함', desc: '완성한 여행 계획을 저장하면 내 보관함에서 다시 불러볼 수 있어요. 즐겨찾기 장소도 여기서 관리할 수 있습니다.' },
+  { id: 'tour-board-btn', title: '📝 게시판', desc: '다른 여행자들의 후기와 팁을 확인하고, 나만의 여행 이야기를 공유해보세요.' },
 ]
 
 const emit = defineEmits<{ done: [] }>()
@@ -23,7 +23,15 @@ const PAD = 10
 const updatePosition = async () => {
   await nextTick()
   const el = document.getElementById(steps[current.value].id)
-  if (!el) return
+  if (!el) {
+    // Element missing: hide the dark overlay, center the tooltip so user can still navigate
+    spotlightStyle.value = { display: 'none' }
+    tooltipStyle.value = {
+      top: `${Math.round(window.innerHeight / 2 - 100)}px`,
+      left: `${Math.max(12, Math.round(window.innerWidth / 2 - TOOLTIP_W / 2))}px`,
+    }
+    return
+  }
 
   const r = el.getBoundingClientRect()
 
@@ -38,7 +46,7 @@ const updatePosition = async () => {
   above.value = spaceBelow < 180 && r.top > 180
 
   const tooltipTop = above.value
-    ? r.top - PAD - 160
+    ? Math.max(12, r.top - PAD - 220)
     : r.bottom + PAD + 12
 
   let tooltipLeft = r.left + r.width / 2 - TOOLTIP_W / 2

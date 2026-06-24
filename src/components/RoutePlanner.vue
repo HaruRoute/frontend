@@ -496,7 +496,7 @@ const optimizeRoute = async () => {
 <template>
   <div class="planner-container">
     <div class="planner-body">
-      <div class="route-panel-heading">
+      <div id="tour-planner-btn" class="route-panel-heading">
         <div class="route-panel-kicker">TODAY'S ROUTE</div>
         <div class="plan-title-wrapper">
           <input

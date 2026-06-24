@@ -11,10 +11,20 @@ interface HistoryItem {
 const route = useRoute()
 const router = useRouter()
 
+const QUICK_SUGGESTIONS = [
+  { label: '부산 여행 코스', query: '부산 여행 코스 추천해줘' },
+  { label: '제주도 자연 명소', query: '제주도 자연 명소 추천해줘' },
+  { label: '서울 당일치기', query: '서울 당일치기 코스 알려줘' },
+  { label: '가족여행 1박2일', query: '가족여행 1박2일 코스 추천해줘' },
+  { label: '야경 명소', query: '야경 명소 추천해줘' },
+]
+
+const GREETING = '안녕하세요! AI 여행 도우미입니다 🗺️\n가고 싶은 지역이나 여행 스타일을 알려주세요. 맞춤 관광지를 추천해드리고, 클릭 한 번으로 경로에 바로 추가할 수 있어요.'
+
 const isOpen = ref(false)
 const input = ref('')
 const isLoading = ref(false)
-const history = ref<HistoryItem[]>([])
+const history = ref<HistoryItem[]>([{ role: 'assistant', content: GREETING }])
 const messagesEl = ref<HTMLElement>()
 
 const toggle = () => {
@@ -204,7 +214,7 @@ const handleKeydown = (e: KeyboardEvent) => {
 }
 
 const clearHistory = () => {
-  history.value = []
+  history.value = [{ role: 'assistant', content: GREETING }]
 }
 
 // v-html 내 onclick에서 호출할 전역 함수 등록
@@ -227,20 +237,8 @@ onUnmounted(() => { delete (window as any).__cbAddPlace })
     </div>
 
     <div ref="messagesEl" class="cb-messages">
-      <!-- 웰컴 메시지 -->
-      <div v-if="history.length === 0" class="cb-welcome">
-        <div class="cb-welcome-icon">🗺️</div>
-        <div class="cb-welcome-title">여행 계획을 도와드릴게요</div>
-        <div class="cb-welcome-sub">가고 싶은 지역이나 여행 스타일을 알려주세요. 관광지를 추천해드리고, 클릭 한 번으로 경로에 바로 추가할 수 있어요.</div>
-        <div class="cb-suggestion-list">
-          <button class="cb-suggestion" @click="input = '부산 여행 코스 추천해줘'; sendMessage()">부산 여행 코스</button>
-          <button class="cb-suggestion" @click="input = '제주도 자연 명소 추천해줘'; sendMessage()">제주도 자연 명소</button>
-          <button class="cb-suggestion" @click="input = '서울 당일치기 코스 알려줘'; sendMessage()">서울 당일치기</button>
-        </div>
-      </div>
-
       <!-- 메시지 목록 -->
-      <template v-for="(msg, idx) in history" :key="idx">
+      <template v-for="(msg, _idx) in history" :key="_idx">
         <div :class="['cb-msg', msg.role === 'user' ? 'cb-msg-user' : 'cb-msg-ai']">
           <div v-if="msg.role === 'assistant'" class="cb-msg-avatar">✦</div>
           <div class="cb-msg-bubble">
@@ -259,6 +257,19 @@ onUnmounted(() => { delete (window as any).__cbAddPlace })
       </div>
     </div>
 
+    <!-- 빠른 질문 버튼 (항상 표시) -->
+    <div class="cb-quick-area">
+      <div class="cb-quick-list">
+        <button
+          v-for="s in QUICK_SUGGESTIONS"
+          :key="s.label"
+          class="cb-quick-btn"
+          :disabled="isLoading"
+          @click="input = s.query; sendMessage()"
+        >{{ s.label }}</button>
+      </div>
+    </div>
+
     <div class="cb-input-area">
       <textarea
         v-model="input"
@@ -274,7 +285,7 @@ onUnmounted(() => { delete (window as any).__cbAddPlace })
   </div>
 
   <!-- FAB 버튼 -->
-  <button class="cb-fab" :class="{ open: isOpen }" @click="toggle" aria-label="AI 여행 도우미">
+  <button id="tour-chat-btn" class="cb-fab" :class="{ open: isOpen }" @click="toggle" aria-label="AI 여행 도우미">
     <span v-if="!isOpen" class="cb-fab-icon">✦</span>
     <span v-else class="cb-fab-icon">×</span>
   </button>
@@ -375,37 +386,33 @@ onUnmounted(() => { delete (window as any).__cbAddPlace })
 .cb-messages::-webkit-scrollbar { width: 4px; }
 .cb-messages::-webkit-scrollbar-thumb { background: #d8d1c4; border-radius: 2px; }
 
-/* ── 웰컴 ──────────────────────────────── */
-.cb-welcome {
-  text-align: center;
-  padding: 20px 8px;
+/* ── 빠른 질문 ─────────────────────────── */
+.cb-quick-area {
+  padding: 8px 12px 0;
+  flex-shrink: 0;
 }
-.cb-welcome-icon { font-size: 32px; margin-bottom: 12px; }
-.cb-welcome-title {
-  font-family: 'Gowun Batang', serif;
-  font-size: 15px;
-  font-weight: 600;
-  color: #211d18;
-  margin-bottom: 8px;
+.cb-quick-list {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 6px;
 }
-.cb-welcome-sub {
-  font-size: 12px;
-  color: #7a7268;
-  line-height: 1.7;
-  margin-bottom: 16px;
-}
-.cb-suggestion-list { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
-.cb-suggestion {
+.cb-quick-list::-webkit-scrollbar { display: none; }
+.cb-quick-btn {
   background: transparent;
   border: 1px solid #d8d1c4;
   border-radius: 999px;
   color: #5c554b;
   font-size: 11.5px;
-  padding: 5px 12px;
+  padding: 4px 11px;
+  white-space: nowrap;
+  flex-shrink: 0;
   cursor: pointer;
   transition: all 0.15s;
 }
-.cb-suggestion:hover { border-color: #b85c38; color: #b85c38; }
+.cb-quick-btn:hover:not(:disabled) { border-color: #b85c38; color: #b85c38; }
+.cb-quick-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ── 메시지 버블 ──────────────────────── */
 .cb-msg { display: flex; align-items: flex-start; gap: 8px; }

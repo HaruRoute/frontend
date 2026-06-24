@@ -14,7 +14,6 @@ const newName = ref('')
 const currentPw = ref('')
 const newPw = ref('')
 
-
 const handleUpdateName = async () => {
   if (!newName.value.trim()) return alert('변경할 이름을 입력해주세요.')
   try {
@@ -43,45 +42,175 @@ const handleUpdatePw = async () => {
 </script>
 
 <template>
-  <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
+  <div class="modal fade profile-modal" id="profileModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" style="color: white; font-weight: 700">내 프로필</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" />
+      <div class="modal-content profile-card">
+        <button type="button" class="btn-close profile-close" data-bs-dismiss="modal" aria-label="Close" />
+
+        <div class="profile-kicker">ENJOY TRIP</div>
+        <h5 class="profile-title">내 정보를<br />수정할게요</h5>
+
+        <div class="profile-meta">현재 이름 — <strong>{{ userName }}</strong></div>
+
+        <!-- 이름 변경 -->
+        <div class="profile-section">
+          <div class="section-label">이름 변경</div>
+          <div class="profile-fields">
+            <input
+              class="profile-input"
+              type="text"
+              v-model="newName"
+              placeholder="변경할 이름"
+              autocomplete="off"
+              @keydown.enter="handleUpdateName"
+            />
+          </div>
+          <button class="profile-primary" @click="handleUpdateName">이름 변경하기</button>
         </div>
-        <div class="modal-body">
-          <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 24px">
-            현재 이름: <strong>{{ userName }}</strong>
-          </p>
 
-          <!-- 이름 변경 -->
-          <div style="margin-bottom: 24px">
-            <p style="font-weight: 700; font-size: 0.9rem; margin-bottom: 10px">이름 변경</p>
-            <div class="mb-3">
-              <label class="form-label">새 이름</label>
-              <input class="form-control" type="text" placeholder="변경할 이름" v-model="newName" />
-            </div>
-            <button class="btn-modal-primary" @click="handleUpdateName">이름 변경</button>
+        <div class="profile-divider" />
+
+        <!-- 비밀번호 변경 -->
+        <div class="profile-section">
+          <div class="section-label">비밀번호 변경</div>
+          <div class="profile-fields">
+            <input
+              class="profile-input"
+              type="password"
+              v-model="currentPw"
+              placeholder="현재 비밀번호"
+              autocomplete="current-password"
+            />
+            <input
+              class="profile-input"
+              type="password"
+              v-model="newPw"
+              placeholder="새 비밀번호"
+              autocomplete="new-password"
+              @keydown.enter="handleUpdatePw"
+            />
           </div>
-
-          <hr style="border-color: #e2e8f0" />
-
-          <!-- 비밀번호 변경 -->
-          <div style="margin-top: 24px">
-            <p style="font-weight: 700; font-size: 0.9rem; margin-bottom: 10px">비밀번호 변경</p>
-            <div class="mb-3">
-              <label class="form-label">현재 비밀번호</label>
-              <input class="form-control" type="password" placeholder="현재 비밀번호" v-model="currentPw" />
-            </div>
-            <div class="mb-3">
-              <label class="form-label">새 비밀번호</label>
-              <input class="form-control" type="password" placeholder="새 비밀번호" v-model="newPw" />
-            </div>
-            <button class="btn-modal-primary" @click="handleUpdatePw">비밀번호 변경</button>
-          </div>
+          <button class="profile-primary" @click="handleUpdatePw">비밀번호 변경하기</button>
         </div>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.profile-modal :deep(.modal-dialog) {
+  max-width: 392px;
+}
+
+.profile-card {
+  position: relative;
+  padding: 42px 38px 38px;
+  background: #fcfbf7;
+  border: 1px solid #d8d1c4;
+  border-radius: 1px;
+  box-shadow: 0 24px 60px rgba(33, 29, 24, 0.18);
+}
+
+.profile-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  opacity: 0.45;
+}
+
+.profile-kicker {
+  margin-bottom: 16px;
+  color: #b85c38;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+
+.profile-title {
+  margin: 0 0 10px;
+  color: #211d18;
+  font-family: 'Gowun Batang', serif;
+  font-size: 1.85rem;
+  font-weight: 400;
+  line-height: 1.34;
+}
+
+.profile-meta {
+  margin-bottom: 28px;
+  color: #9a9286;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.78rem;
+}
+
+.profile-meta strong {
+  color: #211d18;
+  font-weight: 700;
+}
+
+.profile-section {
+  margin-bottom: 4px;
+}
+
+.section-label {
+  margin-bottom: 10px;
+  color: #5c554b;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.profile-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.profile-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 15px;
+  background: #fcfbf7;
+  border: 1px solid #d8d1c4;
+  border-radius: 0;
+  color: #211d18;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.profile-input::placeholder {
+  color: #9a9286;
+}
+
+.profile-input:focus {
+  border-color: #b85c38;
+  box-shadow: 0 0 0 3px rgba(184, 92, 56, 0.12);
+}
+
+.profile-primary {
+  width: 100%;
+  height: 44px;
+  background: #211d18;
+  border: 1px solid #211d18;
+  color: #fcfbf7;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.profile-primary:hover {
+  background: #b85c38;
+  border-color: #b85c38;
+}
+
+.profile-divider {
+  margin: 24px 0;
+  border-top: 1px solid #e4ded2;
+}
+</style>

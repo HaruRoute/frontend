@@ -92,6 +92,13 @@ body {
   border: 1px solid var(--border);
   padding: 7px 12px;
   border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.app-navbar .user-greeting:hover {
+  background: #f1ece1;
+  border-color: #b85c38;
+  color: #b85c38;
 }
 
 /* ── Hero Header ── */
