@@ -70,14 +70,74 @@ const buildSpotContent = (spot: any, idx: number, favId?: number) => {
 }
 
 const buildKakaoPlaceContent = (place: any, idx: number) => {
+  const favId = place.__favId
+  const favBtn = props.isLoggedIn
+    ? (favId
+        ? `<button onclick="window.__removeFavFromKakao(${favId},${idx})" class="popup-btn btn-danger">즐겨찾기 취소</button>`
+        : `<button onclick="window.__addFavFromKakao(${idx})" class="popup-btn btn-primary-custom">즐겨찾기 추가</button>`)
+    : ''
   const routeBtn = `<button onclick="window.__addToRouteFromKakao(${idx})" class="popup-btn btn-success-custom">경로에 추가</button>`
   return `
     <div class="map-info-popup">
       <div class="popup-no-img">이미지 없음</div>
       <div class="popup-title">${place.place_name}</div>
       <div class="popup-addr">주소 ${place.road_address_name || place.address_name || ''}</div>
-      <div class="popup-btn-group">${routeBtn}</div>
+      <div class="popup-btn-group">${favBtn}${routeBtn}</div>
     </div>`
+}
+
+const findKakaoMarker = (kakaoIdx: number): any =>
+  markers.find(m => m.customData?.mode === 'kakao' && m.customData.kakaoIdx === kakaoIdx)
+
+;(window as any).__addFavFromKakao = async (idx: number) => {
+  if (!props.isLoggedIn) { alert('로그인 후 이용해주세요.'); return }
+  const place = kakaoPlacesCache[idx]
+  if (!place) return
+  try {
+    const res = await api.post('/favorites', {
+      placeName: place.place_name,
+      placeAddress: place.road_address_name || place.address_name || '',
+      lat: parseFloat(place.y),
+      lng: parseFloat(place.x)
+    })
+    place.__favId = res.data.id
+    const marker = findKakaoMarker(idx)
+    if (marker) {
+      marker.setImage(STAR_IMG())
+      sharedInfoWindow.setContent(buildKakaoPlaceContent(place, idx))
+      sharedInfoWindow.open(kakaoMap, marker)
+    }
+    userFavorites.push({
+      id: res.data.id,
+      placeName: place.place_name,
+      placeAddress: place.road_address_name || place.address_name || '',
+      lat: parseFloat(place.y),
+      lng: parseFloat(place.x)
+    })
+    window.dispatchEvent(new CustomEvent('fav-changed'))
+  } catch (e: any) {
+    alert(e.response?.data?.message || '즐겨찾기 추가에 실패했습니다.')
+  }
+}
+
+;(window as any).__removeFavFromKakao = async (favId: number, idx: number) => {
+  try {
+    await api.delete(`/favorites/${favId}`)
+    const place = kakaoPlacesCache[idx]
+    if (place) {
+      place.__favId = undefined
+      const marker = findKakaoMarker(idx)
+      if (marker) {
+        marker.setImage(DEFAULT_IMG())
+        sharedInfoWindow.setContent(buildKakaoPlaceContent(place, idx))
+        sharedInfoWindow.open(kakaoMap, marker)
+      }
+    }
+    userFavorites = userFavorites.filter(f => f.id !== favId)
+    window.dispatchEvent(new CustomEvent('fav-changed'))
+  } catch (e: any) {
+    alert(e.response?.data?.message || '즐겨찾기 취소에 실패했습니다.')
+  }
 }
 
 ;(window as any).__addToRouteFromKakao = (idx: number) => {
@@ -311,7 +371,7 @@ const loadFavorites = async () => {
       const y = parseFloat(item.spot.mapy)
       const x = parseFloat(item.spot.mapx)
       const coordKey = `${y.toFixed(4)}_${x.toFixed(4)}`
-      
+
       const matchedFav = favByName.get(item.spot.title) || favByCoords.get(coordKey)
 
       if (matchedFav) {
@@ -324,6 +384,17 @@ const loadFavorites = async () => {
       if (item.marker.customData) {
         item.marker.customData.favId = item.favId
       }
+    })
+
+    // Kakao 검색 결과도 즐겨찾기 상태 갱신
+    kakaoPlacesCache.forEach((place, idx) => {
+      const x = parseFloat(place.x)
+      const y = parseFloat(place.y)
+      const coordKey = `${y.toFixed(4)}_${x.toFixed(4)}`
+      const matched = favByName.get(place.place_name) || favByCoords.get(coordKey)
+      place.__favId = matched ? matched.id : undefined
+      const marker = findKakaoMarker(idx)
+      if (marker) marker.setImage(place.__favId ? STAR_IMG() : DEFAULT_IMG())
     })
   } catch (e) {
     console.error('Failed to load favorites:', e)
@@ -499,6 +570,8 @@ onUnmounted(() => {
   delete (window as any).__moveTo
   delete (window as any).__addToRouteFromSearch
   delete (window as any).__addToRouteFromFav
+  delete (window as any).__addFavFromKakao
+  delete (window as any).__removeFavFromKakao
   delete (window as any).__addToRouteFromKakao
   window.removeEventListener('fav-changed', loadFavorites)
   window.removeEventListener('route-changed', handleRouteChanged as EventListener)
@@ -595,6 +668,24 @@ const updateMapWithKakaoPlaces = (places: any[]) => {
   spotCache = []
   kakaoPlacesCache = places
 
+  // 기존 즐겨찾기와 Kakao 결과 매칭
+  const favByName = new Map<string, any>()
+  const favByCoords = new Map<string, any>()
+  userFavorites.forEach(fav => {
+    if (fav.placeName) favByName.set(fav.placeName, fav)
+    if (fav.lat && fav.lng) {
+      const key = `${parseFloat(fav.lat).toFixed(4)}_${parseFloat(fav.lng).toFixed(4)}`
+      favByCoords.set(key, fav)
+    }
+  })
+  places.forEach(place => {
+    const x = parseFloat(place.x)
+    const y = parseFloat(place.y)
+    const coordKey = `${y.toFixed(4)}_${x.toFixed(4)}`
+    const matched = favByName.get(place.place_name) || favByCoords.get(coordKey)
+    place.__favId = matched ? matched.id : undefined
+  })
+
   const bounds = new window.kakao.maps.LatLngBounds()
   let currentIndex = 0
   const CHUNK_SIZE = 200
@@ -613,13 +704,15 @@ const updateMapWithKakaoPlaces = (places: any[]) => {
       const coords = new window.kakao.maps.LatLng(y, x)
       bounds.extend(coords)
 
+      const markerImage = place.__favId ? STAR_IMG() : DEFAULT_IMG()
+
       let marker: any
       if (markerPool.length > 0) {
         marker = markerPool.pop()
         marker.setPosition(coords)
-        marker.setImage(DEFAULT_IMG())
+        marker.setImage(markerImage)
       } else {
-        marker = new window.kakao.maps.Marker({ position: coords, image: DEFAULT_IMG() })
+        marker = new window.kakao.maps.Marker({ position: coords, image: markerImage })
         window.kakao.maps.event.addListener(marker, 'click', () => {
           if (!marker.customData) return
           if (marker.customData.mode === 'kakao') {
@@ -672,9 +765,31 @@ const searchByKeyword = (keyword: string) => {
 }
 
 const searchSpots = async () => {
-  // 관광지명만 입력된 경우 → 카카오 키워드 검색
-  if (spotKeyword.value.trim() && !selectedType.value) {
-    searchByKeyword(spotKeyword.value.trim())
+  // 관광지명 키워드가 있으면 → DB 키워드 검색 (즐겨찾기 버튼 포함)
+  if (spotKeyword.value.trim()) {
+    isLoading.value = true
+    try {
+      const res = await api.get('/spots', {
+        params: {
+          keyword: spotKeyword.value.trim(),
+          areaCode: selectedArea.value || undefined,
+          sigunguCode: selectedSigungu.value || undefined,
+          contentTypeId: selectedType.value || undefined,
+          limit: 100
+        }
+      })
+      const items = res.data || []
+      if (items.length === 0) {
+        // DB에 결과 없으면 카카오맵 키워드 검색으로 fallback
+        searchByKeyword(spotKeyword.value.trim())
+        return
+      }
+      updateMap(items)
+    } catch (e) {
+      console.error('Failed to search spots by keyword:', e)
+    } finally {
+      isLoading.value = false
+    }
     return
   }
 
