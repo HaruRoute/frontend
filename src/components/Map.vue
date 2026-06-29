@@ -1021,7 +1021,7 @@ const updateMap = (spots: any[], autoBounds = true) => {
       <div id="map" ref="mapRef" class="map-canvas"></div>
       
       <!-- Search inside the current map bounds. -->
-      <div class="position-absolute" style="top: 16px; right: 16px; z-index: 15;">
+      <div class="position-absolute location-btn-wrapper" style="top: 16px; right: 16px; z-index: 15;">
         <button
           id="tour-location-search"
           class="btn-location-search d-flex align-items-center gap-2 px-3 py-2"
@@ -1249,6 +1249,11 @@ const updateMap = (spots: any[], autoBounds = true) => {
   .map-stage {
     height: 52vh;
     min-height: 420px;
+  }
+
+  .location-btn-wrapper {
+    top: auto !important;
+    bottom: 16px;
   }
 
   .map-canvas {
